@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <script src="https://code.jquery.com/jquery-1.12.4.min.js"></script>
+</head>
+<body>
+
+<link rel="stylesheet" href="../build/main.css">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/magnific-popup.js/1.1.0/magnific-popup.min.css" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/vue/1.0.25/vue.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/magnific-popup.js/1.1.0/jquery.magnific-popup.min.js"></script>
+
+<p>Placeholder for competition rules/instructions...</p>
+<div id="photoGallery">
+    <p v-if="false">Loading photos...</p>
+    <ul v-cloak="">
+        <li v-for="(groupIndex, group) in groups">
+            <template v-if="group.images.length"><br/>
+                <h3 :class="false &amp;&amp; selectedGroup !== groupIndex ? 'clickable' : ''" v-on:click="selectedGroup = groupIndex">
+                    {{ group.title }} <span v-if="groupIndex !== selectedGroup">({{ group.images.length }} photos)</span>
+                </h3>
+                <p transition="slide" v-html="group.description" v-show="true || groupIndex === selectedGroup"></p>
+                <ul transition="slide" v-show="true || groupIndex === selectedGroup">
+                    <li v-for="image in group.images"><a class="galleryItem" data-author="{{ image.author }}" data-caption="{{ image.caption }}" data-context="{{ image.context }}" data-date="{{ image.date }}" data-full="{{ image.full }}" data-group="{{ image.group }}" data-id="{{ image.id }}" data-location="{{ image.location }}" href="{{ image.big }}"><img src="{{ image.thumb }}"/></a></li>
+                </ul>
+            </template>
+        </li>
+    </ul>
+</div>
+
+<script src="../src/main.js"></script>
+
+</body>
+</html>

@@ -1,0 +1,55 @@
+[v-cloak]
+  display: none
+
+.slide-transition
+  transition: all .5s ease-in-out
+  max-height: 305px
+  overflow-y: hidden
+
+.slide-enter, .slide-leave
+  transition: all .5s ease-in-out
+  max-height: 0
+  opacity: 0
+
+div#photoGallery
+  h3.clickable
+    cursor: pointer
+    opacity: .5
+
+  ul
+    list-style: none
+    padding: 0
+
+    ul
+      padding-bottom: 40px
+      overflow-y: auto
+
+      li
+        float: left
+        padding: 0 2px 2px 0
+        margin: 0
+        line-height: 0
+
+.mfp-title a
+  color: #f3f3f3
+
+.mfp-with-zoom
+  .mfp-container, &.mfp-bg
+    opacity: 0
+    -webkit-backface-visibility: hidden
+    /* ideally, transition speed should match zoom duration */
+    -webkit-transition: all 0.3s ease-out
+    -moz-transition: all 0.3s ease-out
+    -o-transition: all 0.3s ease-out
+    transition: all 0.3s ease-out
+
+  &.mfp-ready
+    .mfp-container
+      opacity: 1
+
+    &.mfp-bg
+      opacity: 0.8
+
+  &.mfp-removing
+    .mfp-container, &.mfp-bg
+      opacity: 0
