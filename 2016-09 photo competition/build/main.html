@@ -8,7 +8,7 @@
 <body>
 
 <style>
-[v-cloak]{display:none}.slide-transition{transition:all .5s ease-in-out;max-height:305px;overflow-y:hidden}.slide-enter,.slide-leave{transition:all .5s ease-in-out;max-height:0;opacity:0}div#photoGallery h3.clickable{cursor:pointer;opacity:.5}div#photoGallery ul{list-style:none;padding:0}div#photoGallery ul ul{padding-bottom:40px;overflow-y:auto}div#photoGallery ul ul li{float:left;padding:0 2px 2px 0;margin:0;line-height:0}.mfp-title a{color:#f3f3f3}.mfp-with-zoom .mfp-container,.mfp-with-zoom.mfp-bg{opacity:0;-webkit-backface-visibility:hidden;-webkit-transition:all .3s ease-out;-moz-transition:all .3s ease-out;-o-transition:all .3s ease-out;transition:all .3s ease-out}.mfp-with-zoom.mfp-ready .mfp-container{opacity:1}.mfp-with-zoom.mfp-ready.mfp-bg{opacity:.8}.mfp-with-zoom.mfp-removing .mfp-container,.mfp-with-zoom.mfp-removing.mfp-bg{opacity:0}
+[v-cloak]{display:none}.slide-transition{transition:all .5s ease-in-out;max-height:305px;overflow-y:hidden}.slide-enter,.slide-leave{transition:all .5s ease-in-out;max-height:0;opacity:0}div#photoGallery h3.clickable{cursor:pointer;opacity:.5}div#photoGallery ul{list-style:none;padding:0}div#photoGallery ul ul{padding-bottom:40px;overflow-y:auto}div#photoGallery ul ul li{float:left;padding:0 2px 2px 0;margin:0;line-height:0}.mfp-title a{color:#f3f3f3}.mfp-with-zoom .mfp-container,.mfp-with-zoom.mfp-bg{opacity:0;-webkit-backface-visibility:hidden;-webkit-transition:all .3s ease-out;-moz-transition:all .3s ease-out;-o-transition:all .3s ease-out;transition:all .3s ease-out}.mfp-with-zoom.mfp-ready .mfp-container{opacity:1}.mfp-with-zoom.mfp-ready.mfp-bg{opacity:.8}.mfp-with-zoom.mfp-removing .mfp-container,.mfp-with-zoom.mfp-removing.mfp-bg{opacity:0}.mfp-with-zoom .mfp-img{max-height:90vh !important}
 
 </style>
 <link href="https://cdnjs.cloudflare.com/ajax/libs/magnific-popup.js/1.1.0/magnific-popup.min.css" rel="stylesheet"/>
@@ -21,11 +21,9 @@
     <ul v-cloak="">
         <li v-for="(groupIndex, group) in groups">
             <template v-if="group.images.length"><br/>
-                <h3 :class="false &amp;&amp; selectedGroup !== groupIndex ? 'clickable' : ''" v-on:click="selectedGroup = groupIndex">
-                    {{ group.title }} <span v-if="groupIndex !== selectedGroup">({{ group.images.length }} photos)</span>
-                </h3>
-                <p transition="slide" v-html="group.description" v-show="true || groupIndex === selectedGroup"></p>
-                <ul transition="slide" v-show="true || groupIndex === selectedGroup">
+                <h3>{{ group.title }}</h3>
+                <p transition="slide" v-html="group.description"></p>
+                <ul transition="slide">
                     <li v-for="image in group.images"><a class="galleryItem" data-author="{{ image.author }}" data-caption="{{ image.caption }}" data-context="{{ image.context }}" data-date="{{ image.date }}" data-full="{{ image.full }}" data-group="{{ image.group }}" data-id="{{ image.id }}" data-location="{{ image.location }}" href="{{ image.big }}"><img src="{{ image.thumb }}"/></a></li>
                 </ul>
             </template>
@@ -37,21 +35,22 @@
 (function ($) {
   $(document).ready(function () {
 
+    var parseGoogleSpreadsheet = function (item) {
+      var result = {};
+      for (var key in item) {
+        if (key.substr(0, 4) === 'gsx$') {
+          result[key.substr(4)] = item[key].$t;
+        }
+      }
+      return result;
+    };
 
     var spreadsheetID = "1DxHj11SmhzbByeXdkaYl9MA5bzAy3cGwq-cjrDiJ8AY";
     var urlpictures = "https://spreadsheets.google.com/feeds/list/" + spreadsheetID + "/1/public/values?alt=json";
     var urlgroups = "https://spreadsheets.google.com/feeds/list/" + spreadsheetID + "/2/public/values?alt=json";
 
     $.getJSON(urlgroups, function (data) {
-      var groupdata = data.feed.entry.map(function (item) {
-        var result = {};
-        for (var key in item) {
-          if (key.substr(0, 4) === 'gsx$') {
-            result[key.substr(4)] = item[key].$t;
-          }
-        }
-        return result;
-      });
+      var groupdata = data.feed.entry.map(parseGoogleSpreadsheet);
 
       var groupmapping = {};
       groupdata.map(function (row, key) {
@@ -60,16 +59,7 @@
       });
 
       $.getJSON(urlpictures, function (data) {
-        jsondata = data.feed.entry.map(function (item) {
-          var result = {};
-          for (var key in item) {
-            if (key.substr(0, 4) === 'gsx$') {
-              result[key.substr(4)] = item[key].$t;
-            }
-          }
-          ;
-          return result;
-        });
+        jsondata = data.feed.entry.map(parseGoogleSpreadsheet);
 
         jsondata.filter(function (row) {
           return row.published === 'yes';
@@ -86,10 +76,12 @@
           el: '#photoGallery',
           data: {
             groups: groupdata,
-            selectedGroup: null
+            votes: []
           },
           methods: {
             vote: function (id) {
+              var self = this;
+
               $.getJSON('//freegeoip.net/json/?callback=?', function (location) {
                 $.ajax(
                   'https://script.google.com/macros/s/AKfycbz47PGo75twC8Guzsg18MetQd3jlKje1LSFJTz1v2QEZWS3H_I/exec',
@@ -102,11 +94,35 @@
                     }
                   }
                 );
+
+                if (typeof self.votes[id] === 'undefined')
+                  self.votes[id] = 1;
+                else
+                  self.votes[id]++;
+
                 alert('Vote registered successfully!');
+              });
+            },
+            loadVotes: function() {
+              var self = this;
+
+              var spreadsheetID = "1qWyPDqudPr-2f5c1nXTnaPB_LVqWvDQAMLXiv5deuq0";
+              var urlVotes = "https://spreadsheets.google.com/feeds/list/" + spreadsheetID + "/1/public/values?alt=json";
+
+              $.getJSON(urlVotes, function (data) {
+                var rows = data.feed.entry.map(parseGoogleSpreadsheet);
+                for (var index in rows) {
+                  if (typeof self.votes[rows[index].photo] === 'undefined')
+                    self.votes[rows[index].photo] = 1;
+                  else
+                    self.votes[rows[index].photo]++;
+                }
               });
             }
           }
         });
+
+        window.photoGallery.loadVotes();
 
         var groups = {};
         $('.galleryItem').each(function () {
@@ -126,7 +142,17 @@
             image: {
               titleSrc: function (item) {
                 var ret = '<' + 'div><' + 'em>' + item.el.attr('data-caption') + '<' + '/em><' + '/div>';
-                ret += '<' + 'a href="javascript:photoGallery.vote(' + item.el.attr('data-id') + ');">Vote for this photo!<' + '/a>';
+                var photoId = item.el.attr('data-id');
+                ret += '<' + 'a href="javascript:photoGallery.vote(' + photoId + ');">Vote for this photo!<' + '/a>';
+
+                var voteCount = typeof window.photoGallery.votes[photoId] === 'undefined' ? 0 : window.photoGallery.votes[photoId];
+                if (voteCount > 1)
+                  ret += ' (' + voteCount + ' votes)';
+                else if (voteCount === 1)
+                  ret += ' (1 vote)';
+                else
+                  ret += ' (no votes yet)';
+
                 ret += '<' + 'small>';
                 if (item.el.attr('data-author')) ret += '<' + 'span>Author: ' + item.el.attr('data-author') + '<' + '/span> ';
                 if (item.el.attr('data-location')) ret += '&middot; <' + 'span>Location: ' + item.el.attr('data-location') + '<' + '/span> ';

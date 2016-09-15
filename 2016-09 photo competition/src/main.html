@@ -18,11 +18,9 @@
     <ul v-cloak="">
         <li v-for="(groupIndex, group) in groups">
             <template v-if="group.images.length"><br/>
-                <h3 :class="false &amp;&amp; selectedGroup !== groupIndex ? 'clickable' : ''" v-on:click="selectedGroup = groupIndex">
-                    {{ group.title }} <span v-if="groupIndex !== selectedGroup">({{ group.images.length }} photos)</span>
-                </h3>
-                <p transition="slide" v-html="group.description" v-show="true || groupIndex === selectedGroup"></p>
-                <ul transition="slide" v-show="true || groupIndex === selectedGroup">
+                <h3>{{ group.title }}</h3>
+                <p transition="slide" v-html="group.description"></p>
+                <ul transition="slide">
                     <li v-for="image in group.images"><a class="galleryItem" data-author="{{ image.author }}" data-caption="{{ image.caption }}" data-context="{{ image.context }}" data-date="{{ image.date }}" data-full="{{ image.full }}" data-group="{{ image.group }}" data-id="{{ image.id }}" data-location="{{ image.location }}" href="{{ image.big }}"><img src="{{ image.thumb }}"/></a></li>
                 </ul>
             </template>
