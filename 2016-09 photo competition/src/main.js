@@ -1,21 +1,22 @@
 (function ($) {
   $(document).ready(function () {
 
+    var parseGoogleSpreadsheet = function (item) {
+      var result = {};
+      for (var key in item) {
+        if (key.substr(0, 4) === 'gsx$') {
+          result[key.substr(4)] = item[key].$t;
+        }
+      }
+      return result;
+    };
 
     var spreadsheetID = "1DxHj11SmhzbByeXdkaYl9MA5bzAy3cGwq-cjrDiJ8AY";
     var urlpictures = "https://spreadsheets.google.com/feeds/list/" + spreadsheetID + "/1/public/values?alt=json";
     var urlgroups = "https://spreadsheets.google.com/feeds/list/" + spreadsheetID + "/2/public/values?alt=json";
 
     $.getJSON(urlgroups, function (data) {
-      var groupdata = data.feed.entry.map(function (item) {
-        var result = {};
-        for (var key in item) {
-          if (key.substr(0, 4) === 'gsx$') {
-            result[key.substr(4)] = item[key].$t;
-          }
-        }
-        return result;
-      });
+      var groupdata = data.feed.entry.map(parseGoogleSpreadsheet);
 
       var groupmapping = {};
       groupdata.map(function (row, key) {
@@ -24,16 +25,7 @@
       });
 
       $.getJSON(urlpictures, function (data) {
-        jsondata = data.feed.entry.map(function (item) {
-          var result = {};
-          for (var key in item) {
-            if (key.substr(0, 4) === 'gsx$') {
-              result[key.substr(4)] = item[key].$t;
-            }
-          }
-          ;
-          return result;
-        });
+        jsondata = data.feed.entry.map(parseGoogleSpreadsheet);
 
         jsondata.filter(function (row) {
           return row.published === 'yes';
@@ -50,10 +42,12 @@
           el: '#photoGallery',
           data: {
             groups: groupdata,
-            selectedGroup: null
+            votes: []
           },
           methods: {
             vote: function (id) {
+              var self = this;
+
               $.getJSON('//freegeoip.net/json/?callback=?', function (location) {
                 $.ajax(
                   'https://script.google.com/macros/s/AKfycbz47PGo75twC8Guzsg18MetQd3jlKje1LSFJTz1v2QEZWS3H_I/exec',
@@ -66,11 +60,35 @@
                     }
                   }
                 );
+
+                if (typeof self.votes[id] === 'undefined')
+                  self.votes[id] = 1;
+                else
+                  self.votes[id]++;
+
                 alert('Vote registered successfully!');
+              });
+            },
+            loadVotes: function() {
+              var self = this;
+
+              var spreadsheetID = "1qWyPDqudPr-2f5c1nXTnaPB_LVqWvDQAMLXiv5deuq0";
+              var urlVotes = "https://spreadsheets.google.com/feeds/list/" + spreadsheetID + "/1/public/values?alt=json";
+
+              $.getJSON(urlVotes, function (data) {
+                var rows = data.feed.entry.map(parseGoogleSpreadsheet);
+                for (var index in rows) {
+                  if (typeof self.votes[rows[index].photo] === 'undefined')
+                    self.votes[rows[index].photo] = 1;
+                  else
+                    self.votes[rows[index].photo]++;
+                }
               });
             }
           }
         });
+
+        window.photoGallery.loadVotes();
 
         var groups = {};
         $('.galleryItem').each(function () {
@@ -90,7 +108,17 @@
             image: {
               titleSrc: function (item) {
                 var ret = '<' + 'div><' + 'em>' + item.el.attr('data-caption') + '<' + '/em><' + '/div>';
-                ret += '<' + 'a href="javascript:photoGallery.vote(' + item.el.attr('data-id') + ');">Vote for this photo!<' + '/a>';
+                var photoId = item.el.attr('data-id');
+                ret += '<' + 'a href="javascript:photoGallery.vote(' + photoId + ');">Vote for this photo!<' + '/a>';
+
+                var voteCount = typeof window.photoGallery.votes[photoId] === 'undefined' ? 0 : window.photoGallery.votes[photoId];
+                if (voteCount > 1)
+                  ret += ' (' + voteCount + ' votes)';
+                else if (voteCount === 1)
+                  ret += ' (1 vote)';
+                else
+                  ret += ' (no votes yet)';
+
                 ret += '<' + 'small>';
                 if (item.el.attr('data-author')) ret += '<' + 'span>Author: ' + item.el.attr('data-author') + '<' + '/span> ';
                 if (item.el.attr('data-location')) ret += '&middot; <' + 'span>Location: ' + item.el.attr('data-location') + '<' + '/span> ';
